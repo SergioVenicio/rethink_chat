@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  rethinkdb-1:
+    image: rethinkdb:2.4.3
+    volumes:
+      - rethinkdb-1-data:/data/
+      - ./rethinkdb/rethink1.conf:/etc/rethinkdb/instances.d/default.conf
+    networks:
+      rethinkdb-cluster:
+        ipv4_address: 172.20.0.10
+    command: ["rethinkdb", "--config-file", "/etc/rethinkdb/instances.d/default.conf", "--join", "172.20.0.10:29015"]
+  rethinkdb-2:
+    image: rethinkdb:2.4.3
+    volumes:
+      - rethinkdb-2-data:/data/
+      - ./rethinkdb/rethink2.conf:/etc/rethinkdb/instances.d/default.conf
+    command: ["rethinkdb", "--config-file", "/etc/rethinkdb/instances.d/default.conf", "--join", "172.20.0.10:29015"]
+    networks:
+      rethinkdb-cluster:
+        ipv4_address: 172.20.0.11
+  rethinkdb-3:
+    image: rethinkdb:2.4.3
+    volumes:
+      - rethinkdb-3-data:/data/
+      - ./rethinkdb/rethink3.conf:/etc/rethinkdb/instances.d/default.conf
+    networks:
+      rethinkdb-cluster:
+        ipv4_address: 172.20.0.12
+    command: ["rethinkdb", "--config-file", "/etc/rethinkdb/instances.d/default.conf", "--join", "172.20.0.10:29015"]
+
+  load-balancer:
+    image: haproxy:2.9.1
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    ports:
+      - 8080
+      - 28015
+      - 29015
+    networks:
+      rethinkdb-cluster:
+        ipv4_address: 172.20.0.100
+volumes:
+  rethinkdb-1-data:
+  rethinkdb-2-data:
+  rethinkdb-3-data:
+
+networks:
+  rethinkdb-cluster:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
